@@ -1,0 +1,31 @@
+[package]
+name = "packet_inspector"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.71"
+bytes = "1.4.0"
+flate2 = "1.0.26"
+flume = "0.10.14"
+tokio = { version = "1.28.2", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+valence_core = { git = "https://github.com/valence-rs/valence", features = [
+    "compression",
+] }
+valence_network = { git = "https://github.com/valence-rs/valence", features = [
+    "compression",
+] }
+
+
+[build-dependencies]
+syn = "2.0.18"
+anyhow = "1.0.71"
+heck = "0.4.1"
+proc-macro2 = "1.0.60"
+quote = "1.0.28"
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = "1.0.96"
