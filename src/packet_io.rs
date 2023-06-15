@@ -1,3 +1,4 @@
+use anyhow::ensure;
 use bytes::BufMut;
 use bytes::BytesMut;
 use std::io;
@@ -12,18 +13,15 @@ use valence_core::protocol::encode::PacketEncoder;
 use valence_core::protocol::Decode;
 use valence_core::protocol::Encode;
 use valence_core::protocol::Packet;
+use valence_core::protocol::MAX_PACKET_SIZE;
 
-#[derive(Clone, Debug)]
-pub enum Direction {
-    Clientbound,
-    Serverbound,
-}
+use crate::packet_registry::PacketSide;
 
 pub(crate) struct PacketIoReader {
     reader: tokio::io::ReadHalf<tokio::net::TcpStream>,
     dec: PacketDecoder,
     threshold: Option<u32>,
-    direction: Direction,
+    direction: PacketSide,
 }
 
 impl PacketIoReader {
@@ -40,7 +38,6 @@ impl PacketIoReader {
             let mut buf = self.dec.take_capacity();
 
             if self.reader.read_buf(&mut buf).await? == 0 {
-                tracing::error!("EOF {:?}", self.direction);
                 return Err(io::Error::from(ErrorKind::UnexpectedEof).into());
             }
 
@@ -64,29 +61,89 @@ pub(crate) struct PacketIoWriter {
 }
 
 impl PacketIoWriter {
-    pub(crate) async fn send_packet_raw(&mut self, frame: &PacketFrame) -> anyhow::Result<()> {
-        let id_buf = varint_to_bytes(VarInt(frame.id));
+    pub(crate) async fn send_packet<P>(&mut self, pkt: &P) -> anyhow::Result<()>
+    where
+        P: Packet + Encode,
+    {
+        self.enc.append_packet(pkt)?;
+        let bytes = self.enc.take();
+        self.writer.write_all(&bytes).await?;
+        Ok(())
+    }
 
-        let packet_length = id_buf.len() + frame.body.len();
+    /*
+      No  | Packet Length |  VarInt     | Length of (Data Length) + Compressed length of (Packet ID + Data)
+      No  | Data Length   |  VarInt     | Length of uncompressed (Packet ID + Data) or 0
+      Yes | Packet ID	  |  VarInt     | zlib compressed packet ID (see the sections below)
+      Yes | Data          |  Byte Array | zlib compressed packet data (see the sections below)
+    */
+    pub(crate) async fn send_packet_raw(&mut self, frame: &PacketFrame) -> anyhow::Result<()> {
+        let id_varint = VarInt(frame.id);
+        let id_buf = varint_to_bytes(id_varint);
+
+        let mut uncompressed_packet = BytesMut::new();
+        uncompressed_packet.extend_from_slice(&id_buf);
+        uncompressed_packet.extend_from_slice(&frame.body);
+        let uncompressed_packet_length = uncompressed_packet.len();
+        let uncompressed_packet_length_varint = VarInt(uncompressed_packet_length as i32);
 
         if let Some(threshold) = self.threshold {
-            let bytes = self.compress(frame, threshold)?;
+            if uncompressed_packet_length > threshold as usize {
+                use flate2::{bufread::ZlibEncoder, Compression};
+                use std::io::Read;
 
-            self.enc.append_bytes(&bytes);
+                let mut z = ZlibEncoder::new(&uncompressed_packet[..], Compression::new(4));
+                let mut compressed = Vec::new();
 
-            let bytes = self.enc.take();
+                let data_len_size = uncompressed_packet_length_varint.written_size();
 
-            self.writer.write_all(&bytes).await?;
+                let packet_len = data_len_size + z.read_to_end(&mut compressed)?;
+
+                ensure!(
+                    packet_len <= MAX_PACKET_SIZE as usize,
+                    "packet exceeds maximum length"
+                );
+
+                drop(z);
+
+                self.enc
+                    .append_bytes(&varint_to_bytes(VarInt(packet_len as i32)));
+
+                self.enc
+                    .append_bytes(&varint_to_bytes(uncompressed_packet_length_varint));
+
+                self.enc.append_bytes(&compressed);
+
+                let bytes = self.enc.take();
+
+                self.writer.write_all(&bytes).await?;
+                self.writer.flush().await?;
+
+                // now we need to compress the packet.
+            } else {
+                // no need to compress, but we do need to inject a zero
+                let empty = VarInt(0);
+
+                let data_len_size = empty.written_size();
+                let packet_len = data_len_size + uncompressed_packet_length;
+
+                self.enc
+                    .append_bytes(&varint_to_bytes(VarInt(packet_len as i32)));
+                self.enc.append_bytes(&varint_to_bytes(empty));
+                self.enc.append_bytes(&uncompressed_packet);
+                let bytes = self.enc.take();
+                self.writer.write_all(&bytes).await?;
+                self.writer.flush().await?;
+            }
 
             return Ok(());
         }
 
-        let length = varint_to_bytes(VarInt(packet_length as i32));
+        let length = varint_to_bytes(VarInt(uncompressed_packet_length as i32));
 
         // the frame should be uncompressed at this point.
         self.enc.append_bytes(&length);
-        self.enc.append_bytes(&id_buf);
-        self.enc.append_bytes(&frame.body);
+        self.enc.append_bytes(&uncompressed_packet);
 
         let bytes = self.enc.take();
 
@@ -95,53 +152,59 @@ impl PacketIoWriter {
         Ok(())
     }
 
-    fn compress(&mut self, frame: &PacketFrame, threshold: u32) -> anyhow::Result<BytesMut> {
-        use std::io::Read;
+    //     fn compress(&mut self, frame: &PacketFrame, threshold: u32) -> anyhow::Result<BytesMut> {
+    //         use std::io::Read;
 
-        use flate2::bufread::ZlibEncoder;
-        use flate2::Compression;
+    //         use flate2::bufread::ZlibEncoder;
+    //         use flate2::Compression;
 
-        self.enc.clear();
+    //         self.enc.clear();
 
-        let id_buf = varint_to_bytes(VarInt(frame.id));
-        let packet_length = id_buf.len() + frame.body.len();
+    //         let id_varint = VarInt(frame.id);
+    //         let id_varint_length = id_varint.written_size();
+    //         let id_varint_as_bytes = varint_to_bytes(id_varint);
 
-        let mut uncompressed = BytesMut::new();
-        uncompressed.extend(&id_buf);
-        uncompressed.extend(&frame.body);
+    //         let packet_length = frame.body.len();
+    //         let packet_length_as_varint = VarInt(packet_length as i32);
+    //         let packet_length_as_varint_length = packet_length_as_varint.written_size();
+    //         let packet_length_as_varint_length_as_varint =
+    //             VarInt(packet_length_as_varint_length as i32);
 
-        if packet_length < threshold as usize {
-            // TODO: Im probably doing something very fucking stupid here...
-            let mut bytes = BytesMut::new();
+    //         let data_length = id_varint_length + packet_length;
+    //         let data_length_as_varint = VarInt(data_length as i32);
 
-            let packet_len = varint_to_bytes(VarInt(frame.body.len() as i32));
-            let packet_length = varint_to_bytes(VarInt(0 as i32));
+    //         let mut uncompressed = BytesMut::new();
+    //         uncompressed.extend(&id_varint_as_bytes);
+    //         uncompressed.extend(&frame.body);
 
-            bytes.extend(&packet_len);
-            bytes.extend(&packet_length);
-            bytes.extend(&uncompressed);
+    //         if packet_length < threshold as usize {
+    //             let mut bytes = BytesMut::new();
 
-            return Ok(bytes);
-        }
+    //             bytes.extend(&varint_to_bytes(packet_length_as_varint_length_as_varint));
+    //             bytes.extend(&varint_to_bytes(data_length_as_varint));
+    //             bytes.extend(&uncompressed);
 
-        let mut bytes = BytesMut::new();
-        let mut compressed = Vec::new();
+    //             return Ok(bytes);
+    //         }
 
-        let data_len_size = VarInt(packet_length as i32).written_size();
-        let mut z = ZlibEncoder::new(&uncompressed[..], Compression::new(4));
+    //         let mut bytes = BytesMut::new();
+    //         let mut compressed = Vec::new();
 
-        let packet_len = data_len_size + z.read_to_end(&mut compressed)?;
-        drop(z);
+    //         let data_len_size = VarInt(packet_length as i32).written_size();
+    //         let mut z = ZlibEncoder::new(&uncompressed[..], Compression::new(4));
 
-        let packet_len = varint_to_bytes(VarInt(packet_len as i32));
-        let packet_length = varint_to_bytes(VarInt(packet_length as i32));
+    //         let packet_len = data_len_size + z.read_to_end(&mut compressed)?;
+    //         drop(z);
 
-        bytes.extend(&packet_len);
-        bytes.extend(&packet_length);
-        bytes.extend(&compressed);
+    //         let packet_len = varint_to_bytes(VarInt(packet_len as i32));
+    //         let packet_length = varint_to_bytes(VarInt(packet_length as i32));
 
-        return Ok(bytes);
-    }
+    //         bytes.extend(&packet_len);
+    //         bytes.extend(&packet_length);
+    //         bytes.extend(&compressed);
+
+    //         return Ok(bytes);
+    //     }
 
     #[allow(dead_code)]
     pub(crate) fn set_compression(&mut self, threshold: Option<u32>) {
@@ -155,13 +218,13 @@ pub(crate) struct PacketIo {
     enc: PacketEncoder,
     dec: PacketDecoder,
     threshold: Option<u32>,
-    direction: Direction,
+    direction: PacketSide,
 }
 
 const READ_BUF_SIZE: usize = 1024;
 
 impl PacketIo {
-    pub(crate) fn new(stream: TcpStream, direction: Direction) -> Self {
+    pub(crate) fn new(stream: TcpStream, direction: PacketSide) -> Self {
         Self {
             stream: stream,
             enc: PacketEncoder::new(),
@@ -197,7 +260,7 @@ impl PacketIo {
     }
 }
 
-fn varint_to_bytes(i: VarInt) -> BytesMut {
+pub fn varint_to_bytes(i: VarInt) -> BytesMut {
     let mut buf = BytesMut::new();
     let mut writer = (&mut buf).writer();
     i.encode(&mut writer).unwrap();

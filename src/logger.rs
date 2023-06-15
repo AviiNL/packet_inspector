@@ -2,10 +2,10 @@ use std::sync::RwLock;
 
 use valence_core::protocol::decode::PacketFrame;
 
-use crate::packet_io::Direction;
+use crate::packet_registry::PacketSide;
 
 pub struct Logger {
-    pub packets: RwLock<Vec<(String, Direction, PacketFrame)>>,
+    pub packets: RwLock<Vec<(String, PacketSide, PacketFrame)>>,
 }
 
 impl Logger {
@@ -15,7 +15,7 @@ impl Logger {
         }
     }
 
-    pub fn log(&self, name: String, direction: Direction, packet: PacketFrame) {
+    pub fn log(&self, name: String, direction: PacketSide, packet: PacketFrame) {
         tracing::info!("Packet: {} {:?} {:?}", name, direction, packet.id);
 
         self.packets
