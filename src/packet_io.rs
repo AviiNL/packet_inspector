@@ -3,25 +3,18 @@ use bytes::BufMut;
 use bytes::BytesMut;
 use std::io;
 use std::io::ErrorKind;
-use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use tokio::time::timeout;
 use valence_core::__private::VarInt;
 use valence_core::protocol::decode::{PacketDecoder, PacketFrame};
 use valence_core::protocol::encode::PacketEncoder;
-use valence_core::protocol::Decode;
 use valence_core::protocol::Encode;
-use valence_core::protocol::Packet;
 use valence_core::protocol::MAX_PACKET_SIZE;
-
-use crate::packet_registry::PacketSide;
 
 pub(crate) struct PacketIoReader {
     reader: tokio::io::ReadHalf<tokio::net::TcpStream>,
     dec: PacketDecoder,
     threshold: Option<u32>,
-    direction: PacketSide,
 }
 
 impl PacketIoReader {
@@ -61,16 +54,6 @@ pub(crate) struct PacketIoWriter {
 }
 
 impl PacketIoWriter {
-    pub(crate) async fn send_packet<P>(&mut self, pkt: &P) -> anyhow::Result<()>
-    where
-        P: Packet + Encode,
-    {
-        self.enc.append_packet(pkt)?;
-        let bytes = self.enc.take();
-        self.writer.write_all(&bytes).await?;
-        Ok(())
-    }
-
     /*
       No  | Packet Length |  VarInt     | Length of (Data Length) + Compressed length of (Packet ID + Data)
       No  | Data Length   |  VarInt     | Length of uncompressed (Packet ID + Data) or 0
@@ -218,19 +201,17 @@ pub(crate) struct PacketIo {
     enc: PacketEncoder,
     dec: PacketDecoder,
     threshold: Option<u32>,
-    direction: PacketSide,
 }
 
 const READ_BUF_SIZE: usize = 1024;
 
 impl PacketIo {
-    pub(crate) fn new(stream: TcpStream, direction: PacketSide) -> Self {
+    pub(crate) fn new(stream: TcpStream) -> Self {
         Self {
             stream: stream,
             enc: PacketEncoder::new(),
             dec: PacketDecoder::new(),
             threshold: None,
-            direction,
         }
     }
 
@@ -242,7 +223,6 @@ impl PacketIo {
                 reader,
                 dec: self.dec,
                 threshold: self.threshold,
-                direction: self.direction,
             },
             PacketIoWriter {
                 writer,

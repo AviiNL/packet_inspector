@@ -4,17 +4,25 @@ use bytes::Bytes;
 use valence_core::protocol::decode::PacketFrame;
 
 pub struct PacketRegistry {
-    pub packets: RwLock<Vec<Packet>>,
-    pub received_packets: RwLock<Vec<Packet>>,
+    packets: RwLock<Vec<Packet>>,
+    receiver: flume::Receiver<Packet>,
+    sender: flume::Sender<Packet>,
 }
 
 #[allow(unused)]
 impl PacketRegistry {
     pub fn new() -> Self {
+        let (sender, receiver) = flume::unbounded::<Packet>();
+
         Self {
             packets: RwLock::new(Vec::new()),
-            received_packets: RwLock::new(Vec::new()),
+            receiver,
+            sender,
         }
+    }
+
+    pub fn subscribe(&self) -> flume::Receiver<Packet> {
+        self.receiver.clone()
     }
 
     pub fn register(&self, packet: Packet) {
@@ -47,9 +55,13 @@ impl PacketRegistry {
         side: PacketSide,
         state: PacketState,
         threshold: Option<u32>,
-        packet: &PacketFrame, // This HAS TO BE Decompressed at this point.
+        packet: &PacketFrame,
     ) -> anyhow::Result<()> {
-        log(side, state, &packet);
+        let mut p = self.get_specific_packet(side, state, packet.id);
+        p.data = Some(packet.body.clone().freeze());
+
+        // store in received_packets
+        self.sender.send(p)?;
 
         Ok(())
     }
@@ -77,21 +89,4 @@ pub enum PacketState {
 pub enum PacketSide {
     Clientbound,
     Serverbound,
-}
-
-fn log(direction: PacketSide, state: PacketState, packet: &PacketFrame) {
-    tracing::debug!(
-        "{:?}: {:?} {:?}",
-        direction,
-        state,
-        truncated(format!("{:?}", packet), 512)
-    );
-}
-
-fn truncated(string: String, max_len: usize) -> String {
-    if string.len() > max_len {
-        format!("{}...", &string[..max_len])
-    } else {
-        string.to_string()
-    }
 }

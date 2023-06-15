@@ -6,20 +6,11 @@ use valence_network::packet::{
     HandshakeC2s, HandshakeNextState, LoginCompressionS2c, LoginSuccessS2c,
 };
 
-use crate::{
-    logger::Logger,
-    packet_io::PacketIo,
-    packet_registry::{PacketSide, PacketState},
-    PACKET_REGISTRY,
-};
+use crate::{packet_io::PacketIo, packet_registry::PacketState, PACKET_REGISTRY};
 
-pub async fn process(
-    client: TcpStream,
-    server: TcpStream,
-    _logger: Arc<Logger>,
-) -> anyhow::Result<()> {
-    let client = PacketIo::new(client, PacketSide::Serverbound);
-    let server = PacketIo::new(server, PacketSide::Clientbound);
+pub async fn process(client: TcpStream, server: TcpStream) -> anyhow::Result<()> {
+    let client = PacketIo::new(client);
+    let server = PacketIo::new(server);
 
     let (mut client_reader, mut client_writer) = client.split();
     let (mut server_reader, mut server_writer) = server.split();
