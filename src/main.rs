@@ -1,67 +1,36 @@
-use std::sync::{Arc, OnceLock};
-
 use packet_registry::Packet;
-use tokio::net::TcpStream;
+use proxy::Proxy;
 use tracing::Level;
 
-use crate::{client::process, packet_registry::PacketRegistry};
-
-mod client;
 mod packet_io;
 mod packet_registry;
-
-include!(concat!(env!("OUT_DIR"), "/packets.rs"));
-
-static PACKET_REGISTRY: OnceLock<Arc<PacketRegistry>> = OnceLock::new();
+mod proxy;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(Level::TRACE)
         .init();
 
-    PACKET_REGISTRY.get_or_init(|| {
-        let registry = PacketRegistry::new();
-        registry.register_all(&STD_PACKETS);
-        Arc::new(registry)
-    });
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:25566")
-        .await
-        .unwrap();
-
-    println!("Listening on port 25566");
+    let proxy = Proxy::new("0.0.0.0:25566".parse()?, "127.0.0.1:25565".parse()?);
+    let receiver = proxy.subscribe();
 
     tokio::spawn(async move {
-        while let Ok((client, _addr)) = listener.accept().await {
-            tokio::spawn(async move {
-                let server = TcpStream::connect("127.0.0.1:25560").await.unwrap();
+        proxy.run().await?;
 
-                if let Err(e) = process(client, server).await {
-                    if !e.to_string().contains("unexpected end of file") {
-                        // bit meh to do it like this but it works
-                        tracing::error!("Error: {:?}", e);
-                    }
-                }
-
-                Ok::<(), anyhow::Error>(())
-            });
-        }
+        Ok::<(), anyhow::Error>(())
     });
 
     // consumer
     tokio::spawn(async move {
-        let receiver = {
-            let registry = PACKET_REGISTRY.get().unwrap();
-            registry.subscribe()
-        };
-
         while let Ok(packet) = receiver.recv() {
             log(&packet);
         }
     });
 
     tokio::signal::ctrl_c().await.unwrap();
+
+    Ok(())
 }
 
 fn log(packet: &Packet) {
