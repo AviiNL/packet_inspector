@@ -110,6 +110,7 @@ enum SyntectTheme {
     SolarizedLight,
 }
 
+#[allow(unused)]
 impl SyntectTheme {
     fn all() -> impl ExactSizeIterator<Item = Self> {
         [
@@ -208,6 +209,7 @@ impl CodeTheme {
     }
 }
 
+#[allow(unused)]
 impl CodeTheme {
     pub fn dark() -> Self {
         Self {
