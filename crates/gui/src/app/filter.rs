@@ -1,11 +1,14 @@
+use egui::{RichText, Ui, Widget};
+use itertools::Itertools;
 use proxy_lib::PacketState;
 
-//
-use super::{SharedState, View, Window};
+use crate::tri_checkbox::{TriCheckbox, TriCheckboxState};
+
+use super::{SharedState, Tab, View};
 
 pub struct Filter {}
 
-impl Window for Filter {
+impl Tab for Filter {
     fn new() -> Self {
         Self {}
     }
@@ -16,53 +19,72 @@ impl Window for Filter {
 }
 
 impl View for Filter {
-    fn ui(&mut self, ui: &mut egui::Ui, _: &mut SharedState) {
-        // only Handshake packets
-        ui.heading("Handshaking");
-        for p in proxy_lib::STD_PACKETS
-            .iter()
-            .filter(|p| p.state == PacketState::Handshaking)
-        {
-            if ui.checkbox(&mut true, p.name).changed() {
-                // changed = true;
-                ui.ctx().request_repaint();
-            }
-        }
+    fn ui(&mut self, ui: &mut egui::Ui, state: &mut SharedState) {
+        draw_packet_list(ui, state, PacketState::Handshaking);
+        ui.separator();
+        draw_packet_list(ui, state, PacketState::Status);
+        ui.separator();
+        draw_packet_list(ui, state, PacketState::Login);
+        ui.separator();
+        draw_packet_list(ui, state, PacketState::Play);
+    }
+}
 
-        // only Status packets
-        ui.heading("Status");
-        for p in proxy_lib::STD_PACKETS
-            .iter()
-            .filter(|p| p.state == PacketState::Status)
-        {
-            if ui.checkbox(&mut true, p.name).changed() {
-                // changed = true;
-                ui.ctx().request_repaint();
-            }
+fn get_checkbox_state(state: &SharedState, packet_state: PacketState) -> TriCheckboxState {
+    let mut p_enabled = 0;
+    let mut disabled = 0;
+    for (_, enabled) in state
+        .packet_filter
+        .iter()
+        .filter(|(p, _)| p.state == packet_state)
+    {
+        if *enabled {
+            p_enabled += 1;
+        } else {
+            disabled += 1;
         }
+    }
+    if p_enabled > 0 && disabled == 0 {
+        TriCheckboxState::Enabled
+    } else if p_enabled > 0 && disabled > 0 {
+        TriCheckboxState::Partial
+    } else {
+        TriCheckboxState::Disabled
+    }
+}
 
-        // only Login packets
-        ui.heading("Login");
-        for p in proxy_lib::STD_PACKETS
-            .iter()
-            .filter(|p| p.state == PacketState::Login)
-        {
-            if ui.checkbox(&mut true, p.name).changed() {
-                // changed = true;
-                ui.ctx().request_repaint();
-            }
-        }
+fn draw_packet_list(ui: &mut Ui, state: &mut SharedState, packet_state: PacketState) {
+    let title = match packet_state {
+        PacketState::Handshaking => "Handshaking",
+        PacketState::Status => "Status",
+        PacketState::Login => "Login",
+        PacketState::Play => "Play",
+    };
 
-        // only Play packets
-        ui.heading("Play");
-        for p in proxy_lib::STD_PACKETS
-            .iter()
-            .filter(|p| p.state == PacketState::Play)
+    // Handshake
+    let mut checkbox = get_checkbox_state(&state, packet_state);
+    if TriCheckbox::new(&mut checkbox, RichText::new(title).heading().strong())
+        .ui(ui)
+        .changed()
+    {
+        for (_, enabled) in state
+            .packet_filter
+            .iter_mut()
+            .filter(|(p, _)| p.state == packet_state)
         {
-            if ui.checkbox(&mut true, p.name).changed() {
-                // changed = true;
-                ui.ctx().request_repaint();
+            if checkbox == TriCheckboxState::Partial {
+                continue;
             }
+            *enabled = checkbox == TriCheckboxState::Enabled;
         }
+    }
+
+    for (p, mut enabled) in state
+        .packet_filter
+        .iter_mut()
+        .filter(|(p, _)| p.state == packet_state)
+        .sorted_by(|(a, _), (b, _)| a.id.cmp(&b.id))
+    {
+        ui.checkbox(&mut enabled, format!("[0x{:0>2X}] {}", p.id, p.name));
     }
 }

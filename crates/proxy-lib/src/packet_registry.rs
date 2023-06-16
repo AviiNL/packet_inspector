@@ -1,4 +1,7 @@
-use std::sync::RwLock;
+use std::{
+    hash::{Hash, Hasher},
+    sync::RwLock,
+};
 
 use bytes::Bytes;
 use valence_core::protocol::decode::PacketFrame;
@@ -67,17 +70,38 @@ impl PacketRegistry {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Packet {
     pub side: PacketSide,
     pub state: PacketState,
     pub id: i32,
+    #[cfg_attr(feature = "serde", serde[skip])]
     pub name: &'static str,
     /// Uncompressed packet data
+    #[cfg_attr(feature = "serde", serde[skip])]
     pub data: Option<Bytes>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+impl PartialEq for Packet {
+    fn eq(&self, other: &Self) -> bool {
+        self.side == other.side
+            && self.state == other.state
+            && self.id == other.id
+            && self.data == other.data
+    }
+}
+
+impl Hash for Packet {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.side.hash(state);
+        self.state.hash(state);
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum PacketState {
     Handshaking,
     Status,
@@ -85,7 +109,8 @@ pub enum PacketState {
     Play,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum PacketSide {
     Clientbound,
     Serverbound,

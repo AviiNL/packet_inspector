@@ -15,33 +15,13 @@ pub trait View {
 }
 
 /// Something to view
-pub trait Window: View {
+pub trait Tab: View {
     fn new() -> Self
     where
         Self: Sized;
 
     /// `&'static` so we can also use it as a key to store open/close state.
     fn name(&self) -> &'static str;
-
-    fn default_width(&self) -> f32 {
-        320.0
-    }
-
-    /// Show windows, etc
-    fn show(
-        &mut self,
-        ctx: &egui::Context,
-        open: &mut bool,
-        shared_state: Arc<RwLock<SharedState>>,
-    ) {
-        let mut state = shared_state.write().unwrap();
-        egui::Window::new(self.name())
-            .default_width(self.default_width())
-            .open(open)
-            .show(ctx, |ui| {
-                self.ui(ui, &mut state);
-            });
-    }
 }
 
 struct TabViewer {
@@ -49,7 +29,7 @@ struct TabViewer {
 }
 
 impl egui_dock::TabViewer for TabViewer {
-    type Tab = Box<dyn Window>;
+    type Tab = Box<dyn Tab>;
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         tab.ui(ui, &mut self.shared_state.write().unwrap());
@@ -65,7 +45,7 @@ impl egui_dock::TabViewer for TabViewer {
 }
 
 pub struct GuiApp {
-    tree: Tree<Box<dyn Window>>,
+    tree: Tree<Box<dyn Tab>>,
     shared_state: Arc<RwLock<SharedState>>,
     tab_viewer: TabViewer,
 }
@@ -73,8 +53,7 @@ pub struct GuiApp {
 impl GuiApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Default Application Layout
-        let mut tree: Tree<Box<dyn Window>> =
-            Tree::new(vec![Box::new(connection::Connection::new())]);
+        let mut tree: Tree<Box<dyn Tab>> = Tree::new(vec![Box::new(connection::Connection::new())]);
 
         let [a, b] = tree.split_right(
             NodeIndex::root(),
@@ -146,6 +125,7 @@ impl eframe::App for GuiApp {
         DockArea::new(&mut self.tree)
             .show_add_buttons(false)
             .show_add_popup(false)
+            .show_close_buttons(false)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.tab_viewer);
     }

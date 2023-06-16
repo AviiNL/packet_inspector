@@ -1,8 +1,8 @@
-use super::{SharedState, View, Window};
+use super::{SharedState, Tab, View};
 
 pub struct PacketList {}
 
-impl Window for PacketList {
+impl Tab for PacketList {
     fn new() -> Self {
         Self {}
     }

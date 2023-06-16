@@ -7,6 +7,8 @@
 
     ConnectionState: Connected / Not Connected
 */
+mod tri_checkbox;
+
 mod app;
 mod shared_state;
 

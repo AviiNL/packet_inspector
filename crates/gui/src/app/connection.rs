@@ -1,10 +1,10 @@
 use crate::shared_state::Event;
 
-use super::{SharedState, View, Window};
+use super::{SharedState, Tab, View};
 
 pub struct Connection {}
 
-impl Window for Connection {
+impl Tab for Connection {
     fn new() -> Self {
         Self {}
     }

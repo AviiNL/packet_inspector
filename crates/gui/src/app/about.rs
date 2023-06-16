@@ -1,8 +1,8 @@
-use super::{SharedState, View, Window};
+use super::{SharedState, Tab, View};
 
 pub struct About {}
 
-impl Window for About {
+impl Tab for About {
     fn new() -> Self {
         Self {}
     }

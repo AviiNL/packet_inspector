@@ -1,8 +1,8 @@
-use super::{SharedState, View, Window};
+use super::{SharedState, Tab, View};
 
 pub struct HexView {}
 
-impl Window for HexView {
+impl Tab for HexView {
     fn new() -> Self {
         Self {}
     }
