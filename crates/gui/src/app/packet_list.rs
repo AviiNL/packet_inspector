@@ -22,30 +22,89 @@ impl Tab for PacketList {
 
 impl View for PacketList {
     fn ui(&mut self, ui: &mut egui::Ui, state: &mut SharedState) {
-        if ui.button("Clear").clicked() {
-            state.selected_packet = None;
-            state.packets.write().unwrap().clear();
+        handle_keyboard_input(state, ui);
+
+        ui.horizontal(|ui| {
+            ui.heading("Packets");
+            draw_packet_counter(state, ui);
+            draw_clear_button(state, ui);
+        });
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .stick_to_bottom(true)
+            .show(ui, |ui| {
+                draw_packet_list(state, ui);
+            });
+    }
+}
+
+fn handle_keyboard_input(state: &mut SharedState, ui: &mut Ui) {
+    if ui.input(|i| i.key_pressed(egui::Key::ArrowUp)) {
+        // select previous packet
+        let index = match state.selected_packet {
+            Some(index) => index,
+            None => 1, // 1, so previous goes to 0
+        };
+
+        if index > 0 {
+            state.selected_packet = Some(index - 1);
+            // TODO: scroll to currently selected packet (how?! i have no reference to the packet rect here)
         }
+    }
+
+    if ui.input(|i| i.key_pressed(egui::Key::ArrowDown)) {
+        // select next packet
+        let index = match state.selected_packet {
+            Some(index) => index,
+            None => 0, // 0, so next goes to 1
+        };
 
         let packets = state.packets.read().unwrap();
-        for (i, packet) in packets.iter().enumerate() {
-            if let Some(filtered) = state.packet_filter.get(packet) {
-                if !filtered {
-                    continue;
-                }
-            }
+        if index < packets.len() - 1 {
+            state.selected_packet = Some(index + 1);
+            // TODO: scroll to currently selected packet (how?! i have no reference to the packet rect here)
+        }
+    }
+}
 
-            let selected = {
-                if let Some(selected) = state.selected_packet {
-                    selected == i
-                } else {
-                    false
-                }
-            };
+fn draw_packet_counter(state: &mut SharedState, ui: &mut Ui) {
+    let packets = state.packets.read().unwrap();
+    let length = packets.len();
 
-            if draw_packet_widget(ui, packet, selected).clicked() {
-                state.selected_packet = Some(i);
+    let filtered_packets = packets
+        .iter()
+        .filter(|p| state.packet_filter.get(p).unwrap_or(true))
+        .count();
+
+    ui.label(format!("({}/{})", filtered_packets, length));
+}
+
+fn draw_clear_button(state: &mut SharedState, ui: &mut Ui) {
+    if ui.button("Clear").clicked() {
+        state.selected_packet = None;
+        state.packets.write().unwrap().clear();
+    }
+}
+
+fn draw_packet_list(state: &mut SharedState, ui: &mut Ui) {
+    let packets = state.packets.read().unwrap();
+    for (i, packet) in packets.iter().enumerate() {
+        if let Some(filtered) = state.packet_filter.get(packet) {
+            if !filtered {
+                continue;
             }
+        }
+
+        let selected = {
+            if let Some(selected) = state.selected_packet {
+                selected == i
+            } else {
+                false
+            }
+        };
+
+        if draw_packet_widget(ui, packet, selected).clicked() {
+            state.selected_packet = Some(i);
         }
     }
 }
