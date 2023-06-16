@@ -1,0 +1,12 @@
+[package]
+name = "proxy-cli"
+version = "0.1.0"
+authors = ["AviiNL <me@avii.nl>"]
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.71"
+proxy-lib = { path = "../proxy-lib" }
+tokio = { version = "1.28.2", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"

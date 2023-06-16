@@ -1,18 +1,23 @@
+mod packet_io;
+mod packet_registry;
+
 use std::{net::SocketAddr, sync::OnceLock};
 
 use tokio::net::TcpStream;
 
 use std::sync::{Arc, RwLock};
 
-use valence_core::protocol::{decode::PacketFrame, Decode, Packet};
+use valence_core::protocol::{decode::PacketFrame, Decode, Packet as ValencePacket};
 use valence_network::packet::{
     HandshakeC2s, HandshakeNextState, LoginCompressionS2c, LoginSuccessS2c,
 };
 
 use crate::{
     packet_io::PacketIo,
-    packet_registry::{Packet as InnerPacket, PacketRegistry, PacketState},
+    packet_registry::{PacketRegistry, PacketState},
 };
+
+pub use packet_registry::Packet;
 
 static PACKET_REGISTRY: OnceLock<Arc<PacketRegistry>> = OnceLock::new();
 
@@ -37,7 +42,7 @@ impl Proxy {
         }
     }
 
-    pub fn subscribe(&self) -> flume::Receiver<InnerPacket> {
+    pub fn subscribe(&self) -> flume::Receiver<Packet> {
         PACKET_REGISTRY.get().unwrap().subscribe()
     }
 
@@ -164,7 +169,7 @@ impl Proxy {
 
 fn extrapolate_packet<'a, P>(packet: &'a PacketFrame) -> Option<P>
 where
-    P: Packet + Decode<'a> + Clone,
+    P: ValencePacket + Decode<'a> + Clone,
 {
     if packet.id != P::ID {
         return None;

@@ -1,10 +1,6 @@
-use packet_registry::Packet;
-use proxy::Proxy;
+use proxy_lib::Packet;
+use proxy_lib::Proxy;
 use tracing::Level;
-
-mod packet_io;
-mod packet_registry;
-mod proxy;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
