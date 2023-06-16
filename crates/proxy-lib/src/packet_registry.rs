@@ -4,6 +4,7 @@ use std::{
 };
 
 use bytes::Bytes;
+use time::OffsetDateTime;
 use valence_core::protocol::decode::PacketFrame;
 
 pub struct PacketRegistry {
@@ -38,6 +39,11 @@ impl PacketRegistry {
     }
 
     fn get_specific_packet(&self, side: PacketSide, state: PacketState, packet_id: i32) -> Packet {
+        let time = match OffsetDateTime::now_local() {
+            Ok(time) => time,
+            Err(_) => OffsetDateTime::now_utc(),
+        };
+
         self.packets
             .read()
             .unwrap()
@@ -47,6 +53,7 @@ impl PacketRegistry {
                 side,
                 state,
                 id: packet_id,
+                timestamp: Some(time),
                 name: "Unknown Packet",
                 data: None,
             })
@@ -61,7 +68,13 @@ impl PacketRegistry {
         packet: &PacketFrame,
     ) -> anyhow::Result<()> {
         let mut p = self.get_specific_packet(side, state, packet.id);
+        let time = match OffsetDateTime::now_local() {
+            Ok(time) => time,
+            Err(_) => OffsetDateTime::now_utc(),
+        };
+
         p.data = Some(packet.body.clone().freeze());
+        p.timestamp = Some(time);
 
         // store in received_packets
         self.sender.send(p)?;
@@ -76,6 +89,8 @@ pub struct Packet {
     pub side: PacketSide,
     pub state: PacketState,
     pub id: i32,
+    #[cfg_attr(feature = "serde", serde[skip])]
+    pub timestamp: Option<OffsetDateTime>,
     #[cfg_attr(feature = "serde", serde[skip])]
     pub name: &'static str,
     /// Uncompressed packet data

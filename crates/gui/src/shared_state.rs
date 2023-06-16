@@ -4,6 +4,48 @@ use egui::Context;
 use proxy_lib::Packet;
 use std::{collections::HashMap, sync::RwLock};
 
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct PacketFilter {
+    inner: HashMap<Packet, bool>,
+}
+
+impl PacketFilter {
+    pub fn new() -> Self {
+        let mut inner = HashMap::new();
+
+        for p in proxy_lib::STD_PACKETS.iter() {
+            inner.insert(p.clone(), true);
+        }
+
+        Self { inner }
+    }
+
+    pub fn get(&self, packet: &Packet) -> Option<bool> {
+        if let Some(v) = self
+            .inner
+            .iter()
+            .find(|(k, _)| k.id == packet.id && k.side == packet.side && k.state == packet.state)
+            .map(|(_, v)| v)
+        {
+            Some(*v)
+        } else {
+            None
+        }
+    }
+
+    pub fn insert(&mut self, packet: Packet, value: bool) {
+        self.inner.insert(packet, value);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&Packet, &bool)> {
+        self.inner.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&Packet, &mut bool)> {
+        self.inner.iter_mut()
+    }
+}
+
 pub enum Event {
     StartListening,
     StopListening,
@@ -17,7 +59,7 @@ pub struct SharedState {
     #[serde(skip)]
     pub is_listening: bool,
 
-    pub packet_filter: HashMap<Packet, bool>,
+    pub packet_filter: PacketFilter,
 
     // pub listener_addr: String,
     // pub server_addr: String,
@@ -37,17 +79,11 @@ impl Default for SharedState {
     fn default() -> Self {
         let (sender, receiver) = flume::unbounded();
 
-        let mut packet_filter = HashMap::new();
-
-        for p in proxy_lib::STD_PACKETS.iter() {
-            packet_filter.insert(p.clone(), true);
-        }
-
         Self {
             listener_addr: "127.0.0.1:25566".to_string(),
             server_addr: "127.0.0.1:25565".to_string(),
             is_listening: false,
-            packet_filter,
+            packet_filter: PacketFilter::new(),
             selected_packet: None,
             packets: RwLock::new(Vec::new()),
             receiver: Some(receiver),
@@ -72,18 +108,13 @@ impl SharedState {
 
         // make a backup of self.packet_filter
 
-        let mut packet_filter = HashMap::new();
+        let mut packet_filter = PacketFilter::new();
         // iterate over proxy_lib::STD_PACKETS
         for p in proxy_lib::STD_PACKETS.iter() {
             // if the packet is in the current packet_filter
-            if let Some(v) = self
-                .packet_filter
-                .iter()
-                .find(|(k, _)| k.id == p.id && k.side == p.side && k.state == p.state)
-                .map(|(_, v)| v)
-            {
+            if let Some(v) = self.packet_filter.get(p) {
                 // insert it into packet_filter
-                packet_filter.insert(p.clone(), *v);
+                packet_filter.insert(p.clone(), v);
             } else {
                 // otherwise insert it into packet_filter with a default value of true
                 packet_filter.insert(p.clone(), true);

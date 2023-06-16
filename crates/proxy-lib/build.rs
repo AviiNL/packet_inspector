@@ -46,6 +46,7 @@ pub fn main() -> anyhow::Result<()> {
                 id: #id,
                 side: #side,
                 state: #state,
+                timestamp: None,
                 name: #stripped_name,
                 data: None,
             }

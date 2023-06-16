@@ -18,6 +18,8 @@ valence_core = { git = "https://github.com/valence-rs/valence", features = [
 valence_network = { git = "https://github.com/valence-rs/valence", features = [
     "compression",
 ] }
+time = { version = "0.3.21", features = ["local-offset"] }
+
 
 [build-dependencies]
 syn = "2.0.18"

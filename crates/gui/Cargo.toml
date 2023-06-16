@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+bytes = "1.4.0"
 proxy-lib = { path = "../proxy-lib", features = ["serde"] }
 tokio = { version = "1.28.2", features = ["full"] }
 tracing = "0.1.37"
@@ -14,5 +15,6 @@ egui = "0.22.0"
 eframe = { version = "0.22.0", features = ["persistence"] }
 egui_dock = { version = "0.6", features = ["serde"] }
 serde = { version = "1.0.163", features = ["derive"] }
+time = { version = "0.3.21", features = ["local-offset"] }
 flume = "0.10.14"
 itertools = "0.10.5"

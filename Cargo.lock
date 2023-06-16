@@ -2013,6 +2013,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_threads"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2819ce041d2ee131036f4fc9d6ae7ae125a3a40e97ba64d04fe799ad9dabbb44"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "objc"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2321,6 +2330,7 @@ name = "proxy-gui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytes",
  "eframe",
  "egui",
  "egui_dock",
@@ -2328,6 +2338,7 @@ dependencies = [
  "itertools",
  "proxy-lib",
  "serde",
+ "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -2347,6 +2358,7 @@ dependencies = [
  "serde",
  "serde_json",
  "syn 2.0.18",
+ "time",
  "tokio",
  "tracing",
  "valence_core",
@@ -2957,6 +2969,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea9e1b3cf1243ae005d9e74085d4d542f3125458f3a81af210d901dcd7411efd"
 dependencies = [
  "itoa",
+ "libc",
+ "num_threads",
  "serde",
  "time-core",
  "time-macros",

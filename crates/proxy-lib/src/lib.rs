@@ -91,6 +91,13 @@ impl Proxy {
                     *state
                 };
 
+                PACKET_REGISTRY.get().unwrap().process(
+                    crate::packet_registry::PacketSide::Serverbound,
+                    state,
+                    *threshold.read().unwrap(),
+                    &packet,
+                )?;
+
                 if state == PacketState::Handshaking {
                     if let Some(handshake) = extrapolate_packet::<HandshakeC2s>(&packet) {
                         *current_state.write().unwrap() = match handshake.next_state {
@@ -99,18 +106,6 @@ impl Proxy {
                         };
                     }
                 }
-
-                let state = {
-                    let state = current_state.read().unwrap();
-                    *state
-                };
-
-                PACKET_REGISTRY.get().unwrap().process(
-                    crate::packet_registry::PacketSide::Serverbound,
-                    state,
-                    *threshold.read().unwrap(),
-                    &packet,
-                )?;
 
                 server_writer.send_packet_raw(&packet).await?;
             }
