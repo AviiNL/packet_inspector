@@ -6,7 +6,6 @@ use tokio::task::JoinHandle;
 
 use crate::shared_state::{Event, SharedState};
 
-mod about;
 mod connection;
 mod filter;
 mod hex_viewer;
