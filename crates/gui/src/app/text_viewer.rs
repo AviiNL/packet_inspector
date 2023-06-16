@@ -1,8 +1,8 @@
 use proxy_lib::{PacketSide, PacketState};
 
 use super::{SharedState, Tab, View};
-use valence::network::packet::HandshakeC2s;
-use valence::protocol::Decode;
+
+include!(concat!(env!("OUT_DIR"), "/packet_to_string.rs"));
 
 pub struct TextView {}
 
@@ -16,6 +16,8 @@ impl Tab for TextView {
     }
 }
 
+const NOT_AVAILABLE: &str = "Not yet implemented";
+
 impl View for TextView {
     fn ui(&mut self, ui: &mut egui::Ui, state: &mut SharedState) {
         let packets = state.packets.read().unwrap();
@@ -24,30 +26,8 @@ impl View for TextView {
         };
 
         let packet = &packets[packet_index];
-        let bytes = packet.data.as_ref().unwrap();
-        let mut data = &bytes.clone()[..];
 
-        let str_packet = match packet.side {
-            PacketSide::Clientbound => match packet.state {
-                PacketState::Handshaking => match packet.id {
-                    _ => "N/A".to_string(),
-                },
-                PacketState::Status => "".to_string(),
-                PacketState::Login => "".to_string(),
-                PacketState::Play => "".to_string(),
-            },
-            PacketSide::Serverbound => match packet.state {
-                PacketState::Handshaking => match packet.id {
-                    0x00 => {
-                        format!("{:#?}", HandshakeC2s::decode(&mut data).unwrap())
-                    }
-                    _ => "N/A".to_string(),
-                },
-                PacketState::Status => "".to_string(),
-                PacketState::Login => "".to_string(),
-                PacketState::Play => "".to_string(),
-            },
-        };
+        let str_packet = packet_to_string(packet);
 
         code_view_ui(ui, &str_packet);
     }
