@@ -10,8 +10,8 @@ mod about;
 mod connection;
 mod filter;
 mod hex_viewer;
-mod json_viewer;
 mod packet_list;
+mod text_viewer;
 
 pub trait View {
     fn ui(&mut self, ui: &mut egui::Ui, shared_state: &mut SharedState);
@@ -72,7 +72,7 @@ impl GuiApp {
             0.5,
             vec![
                 Box::new(hex_viewer::HexView::new()),
-                Box::new(json_viewer::JsonView::new()),
+                Box::new(text_viewer::TextView::new()),
             ],
         );
 

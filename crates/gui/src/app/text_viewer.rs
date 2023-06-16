@@ -4,9 +4,9 @@ use super::{SharedState, Tab, View};
 use valence::network::packet::HandshakeC2s;
 use valence::protocol::Decode;
 
-pub struct JsonView {}
+pub struct TextView {}
 
-impl Tab for JsonView {
+impl Tab for TextView {
     fn new() -> Self {
         Self {}
     }
@@ -16,7 +16,7 @@ impl Tab for JsonView {
     }
 }
 
-impl View for JsonView {
+impl View for TextView {
     fn ui(&mut self, ui: &mut egui::Ui, state: &mut SharedState) {
         let packets = state.packets.read().unwrap();
         let Some(packet_index) = state.selected_packet else {
