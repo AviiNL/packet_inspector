@@ -165,6 +165,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc7eb209b1518d6bb87b283c20095f5228ecda460da70b44f0802523dea6da04"
 
 [[package]]
+name = "android_log-sys"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85965b6739a430150bdd138e2374a98af0c3ee0d030b3bb7fc3bddff58d0102e"
+
+[[package]]
 name = "anyhow"
 version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -393,10 +399,26 @@ checksum = "01db46963eb9486f7884121527ec69751d0e448f9e1d5329e80ea3424118a31a"
 dependencies = [
  "bevy_derive",
  "bevy_ecs",
+ "bevy_reflect",
  "bevy_utils",
  "downcast-rs",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "bevy_core"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ee53d7b4691b57207d72e996992c995a53f3e8d21ca7151ca3956d9ce7d232e"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_tasks",
+ "bevy_utils",
+ "bytemuck",
 ]
 
 [[package]]
@@ -419,6 +441,7 @@ dependencies = [
  "async-channel",
  "bevy_ecs_macros",
  "bevy_ptr",
+ "bevy_reflect",
  "bevy_tasks",
  "bevy_utils",
  "downcast-rs",
@@ -442,6 +465,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_hierarchy"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d04099865a13d1fd8bf3c044a80148cb3d23bfe8c3d5f082dda2ce091d85532"
+dependencies = [
+ "bevy_app",
+ "bevy_core",
+ "bevy_ecs",
+ "bevy_log",
+ "bevy_reflect",
+ "bevy_utils",
+ "smallvec",
+]
+
+[[package]]
+name = "bevy_log"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25980c90ceaad34d09a53291e72ca56fcc754a974cd4654fffcf5b68b283b7a7"
+dependencies = [
+ "android_log-sys",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_utils",
+ "console_error_panic_hook",
+ "tracing-log",
+ "tracing-subscriber",
+ "tracing-wasm",
+]
+
+[[package]]
 name = "bevy_macro_utils"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -453,10 +507,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_math"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da6a1109d06fe947990db032e719e162414cf9bf7a478dcc52742f1c7136c42a"
+dependencies = [
+ "glam",
+ "serde",
+]
+
+[[package]]
 name = "bevy_ptr"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b88451d4c5a353bff67dbaa937b6886efd26ae114769c17f2b35099c7a4de"
+
+[[package]]
+name = "bevy_reflect"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fc3979471890e336f3ba87961ef3ecd45c331cf2cb2f582c885e541af228b48"
+dependencies = [
+ "bevy_math",
+ "bevy_ptr",
+ "bevy_reflect_derive",
+ "bevy_utils",
+ "downcast-rs",
+ "erased-serde",
+ "glam",
+ "once_cell",
+ "parking_lot",
+ "serde",
+ "smallvec",
+ "thiserror",
+]
+
+[[package]]
+name = "bevy_reflect_derive"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bc7ea7c9bc2c531eb29ba5619976613d6680453ff5dd4a7fcd08848e8bec5ad"
+dependencies = [
+ "bevy_macro_utils",
+ "bit-set",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+ "uuid",
+]
 
 [[package]]
 name = "bevy_tasks"
@@ -482,7 +580,7 @@ dependencies = [
  "ahash 0.7.6",
  "bevy_utils_proc_macros",
  "getrandom",
- "hashbrown",
+ "hashbrown 0.12.3",
  "instant",
  "petgraph",
  "thiserror",
@@ -500,6 +598,30 @@ dependencies = [
  "quote",
  "syn 1.0.109",
 ]
+
+[[package]]
+name = "bincode"
+version = "1.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "bit-set"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0700ddab506f33b20a03b13996eccd309a48e5ff77d0d95926aa0210fb4e95f1"
+dependencies = [
+ "bit-vec",
+]
+
+[[package]]
+name = "bit-vec"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
 name = "bitfield-struct"
@@ -739,6 +861,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62ec6771ecfa0762d24683ee5a32ad78487a3d3afdc0fb8cae19d2c5deb50b7c"
 dependencies = [
  "crossbeam-utils",
+]
+
+[[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1038,6 +1170,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "enum-map"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "988f0d17a0fa38291e5f41f71ea8d46a5d5497b9054d5a759fae2cbb819f2356"
+dependencies = [
+ "enum-map-derive",
+ "serde",
+]
+
+[[package]]
+name = "enum-map-derive"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a4da76b3b6116d758c7ba93f7ec6a35d2e2cf24feda76c6e38a375f4d5c59f2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "enumflags2"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1088,6 +1241,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "erased-serde"
+version = "0.3.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f2b0c2380453a92ea8b6c8e5f64ecaafccddde8ceab55ff7a8ac1029f894569"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "errno"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1123,6 +1285,16 @@ name = "event-listener"
 version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
+
+[[package]]
+name = "fancy-regex"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d6b8560a05112eb52f04b00e5d3790c0dd75d9d980eb8a122fb23b92a623ccf"
+dependencies = [
+ "bit-set",
+ "regex",
+]
 
 [[package]]
 name = "fastrand"
@@ -1314,6 +1486,10 @@ name = "glam"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
+dependencies = [
+ "bytemuck",
+ "serde",
+]
 
 [[package]]
 name = "glow"
@@ -1418,6 +1594,15 @@ checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
  "ahash 0.7.6",
  "serde",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+dependencies = [
+ "ahash 0.8.3",
 ]
 
 [[package]]
@@ -1567,7 +1752,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
- "hashbrown",
+ "hashbrown 0.12.3",
  "serde",
 ]
 
@@ -1712,6 +1897,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7012b1bbb0719e1097c47611d3898568c546d597c2e74d66f6087edd5233ff4"
 
 [[package]]
+name = "line-wrap"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f30344350a2a51da54c1d53be93fade8a237e545dbcc4bdbe635413f2117cab9"
+dependencies = [
+ "safemem",
+]
+
+[[package]]
+name = "linked-hash-map"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1734,12 +1934,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b06a4cde4c0f271a446782e3eff8de789548ce57dbc8eca9292c27f4a42004b4"
 
 [[package]]
+name = "lru"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03f1160296536f10c833a82dca22267d5486734230d47bf00bf435885814ba1e"
+dependencies = [
+ "hashbrown 0.13.2",
+]
+
+[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "matchers"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8263075bb86c5a1b1427b5ae862e8889656f126e9f77c484496e8b47cf5c5558"
+dependencies = [
+ "regex-automata",
 ]
 
 [[package]]
@@ -2237,6 +2455,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 
 [[package]]
+name = "plist"
+version = "1.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bd9647b268a3d3e14ff09c23201133a62589c658db02bb7388c7246aafe0590"
+dependencies = [
+ "base64 0.21.2",
+ "indexmap",
+ "line-wrap",
+ "quick-xml",
+ "serde",
+ "time",
+]
+
+[[package]]
 name = "png"
 version = "0.17.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2334,14 +2566,17 @@ dependencies = [
  "eframe",
  "egui",
  "egui_dock",
+ "enum-map",
  "flume",
  "itertools",
  "proxy-lib",
  "serde",
+ "syntect",
  "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "valence",
 ]
 
 [[package]]
@@ -2363,6 +2598,15 @@ dependencies = [
  "tracing",
  "valence_core",
  "valence_network",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.28.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ce5e73202a820a31f8a0ee32ada5e21029c81fd9e3ebf668a40832e4219d9d1"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]
@@ -2447,8 +2691,23 @@ checksum = "d0ab3ca65655bb1e41f2a8c8cd662eb4fb035e67c3f78da1d61dffe89d07300f"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-syntax",
+ "regex-syntax 0.7.2",
 ]
+
+[[package]]
+name = "regex-automata"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c230d73fb8d8c1b9c0b3135c5142a8acee3a0558fb8db5cf1cb65f8d7862132"
+dependencies = [
+ "regex-syntax 0.6.29",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.6.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
 
 [[package]]
 name = "regex-syntax"
@@ -2607,6 +2866,12 @@ name = "ryu"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f91339c0467de62360649f8d3e185ca8de4224ff281f66000de5eb2a77a79041"
+
+[[package]]
+name = "safemem"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef703b7cb59335eae2eb93ceb664c0eb7ea6bf567079d843e09420219668e072"
 
 [[package]]
 name = "same-file"
@@ -2807,6 +3072,9 @@ name = "smallvec"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "smithay-client-toolkit"
@@ -2916,6 +3184,29 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "syntect"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6c454c27d9d7d9a84c7803aaa3c50cd088d2906fe3c6e42da3209aa623576a8"
+dependencies = [
+ "bincode",
+ "bitflags",
+ "fancy-regex",
+ "flate2",
+ "fnv",
+ "lazy_static",
+ "once_cell",
+ "plist",
+ "regex-syntax 0.6.29",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "thiserror",
+ "walkdir",
+ "yaml-rust",
 ]
 
 [[package]]
@@ -3158,12 +3449,27 @@ version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30a651bc37f915e81f087d86e62a18eec5f79550c7faff886f7090b4ea757c77"
 dependencies = [
+ "matchers",
  "nu-ansi-term",
+ "once_cell",
+ "regex",
  "sharded-slab",
  "smallvec",
  "thread_local",
+ "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "tracing-wasm"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4575c663a174420fa2d78f4108ff68f65bf2fbb7dd89f33749b6e826b3626e07"
+dependencies = [
+ "tracing",
+ "tracing-subscriber",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -3244,9 +3550,73 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence"
+version = "0.2.0-dev+mc.1.20.1"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "glam",
+ "uuid",
+ "valence_advancement",
+ "valence_anvil",
+ "valence_biome",
+ "valence_block",
+ "valence_client",
+ "valence_core",
+ "valence_dimension",
+ "valence_entity",
+ "valence_instance",
+ "valence_inventory",
+ "valence_nbt",
+ "valence_network",
+ "valence_player_list",
+ "valence_registry",
+ "valence_world_border",
+]
+
+[[package]]
+name = "valence_advancement"
+version = "0.2.0-dev+mc.1.20.1"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
+dependencies = [
+ "anyhow",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_hierarchy",
+ "rustc-hash",
+ "valence_client",
+ "valence_core",
+]
+
+[[package]]
+name = "valence_anvil"
+version = "0.2.0-dev+mc.1.20.1"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
+dependencies = [
+ "anyhow",
+ "bevy_app",
+ "bevy_ecs",
+ "byteorder",
+ "flate2",
+ "flume",
+ "lru",
+ "num-integer",
+ "thiserror",
+ "tracing",
+ "valence_biome",
+ "valence_block",
+ "valence_client",
+ "valence_core",
+ "valence_entity",
+ "valence_instance",
+ "valence_nbt",
+]
+
+[[package]]
 name = "valence_biome"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -3261,7 +3631,7 @@ dependencies = [
 [[package]]
 name = "valence_block"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "glam",
@@ -3277,7 +3647,7 @@ dependencies = [
 [[package]]
 name = "valence_build_utils"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "proc-macro2",
@@ -3287,7 +3657,7 @@ dependencies = [
 [[package]]
 name = "valence_client"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -3310,7 +3680,7 @@ dependencies = [
 [[package]]
 name = "valence_core"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "aes",
  "anyhow",
@@ -3341,7 +3711,7 @@ dependencies = [
 [[package]]
 name = "valence_core_macros"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3351,7 +3721,7 @@ dependencies = [
 [[package]]
 name = "valence_dimension"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -3366,7 +3736,7 @@ dependencies = [
 [[package]]
 name = "valence_entity"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -3392,7 +3762,7 @@ dependencies = [
 [[package]]
 name = "valence_instance"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -3413,9 +3783,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence_inventory"
+version = "0.2.0-dev+mc.1.20.1"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
+dependencies = [
+ "anyhow",
+ "bevy_app",
+ "bevy_ecs",
+ "tracing",
+ "valence_client",
+ "valence_core",
+]
+
+[[package]]
 name = "valence_nbt"
 version = "0.5.0"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "byteorder",
  "cesu8",
@@ -3428,7 +3811,7 @@ dependencies = [
 [[package]]
 name = "valence_network"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3457,9 +3840,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence_player_list"
+version = "0.2.0-dev+mc.1.20.1"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
+dependencies = [
+ "anyhow",
+ "bevy_app",
+ "bevy_ecs",
+ "bitfield-struct",
+ "uuid",
+ "valence_client",
+ "valence_core",
+ "valence_instance",
+]
+
+[[package]]
 name = "valence_registry"
 version = "0.2.0-dev+mc.1.20.1"
-source = "git+https://github.com/valence-rs/valence#09fbd9b7e774129fe506e1014182d7e2033844bb"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -3469,6 +3867,21 @@ dependencies = [
  "tracing",
  "valence_core",
  "valence_nbt",
+]
+
+[[package]]
+name = "valence_world_border"
+version = "0.2.0-dev+mc.1.20.1"
+source = "git+https://github.com/valence-rs/valence#2ed5a8840da244d8f1f91f1df43750664952be46"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "glam",
+ "valence_client",
+ "valence_core",
+ "valence_entity",
+ "valence_instance",
+ "valence_registry",
 ]
 
 [[package]]
@@ -4033,6 +4446,15 @@ name = "xml-rs"
 version = "0.8.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52839dc911083a8ef63efa4d039d1f58b5e409f923e44c80828f206f66e5541c"
+
+[[package]]
+name = "yaml-rust"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
+dependencies = [
+ "linked-hash-map",
+]
 
 [[package]]
 name = "zbus"

@@ -18,3 +18,8 @@ serde = { version = "1.0.163", features = ["derive"] }
 time = { version = "0.3.21", features = ["local-offset"] }
 flume = "0.10.14"
 itertools = "0.10.5"
+valence = { git = "https://github.com/valence-rs/valence" }
+enum-map = { version = "2.5.0", features = ["serde"] }
+syntect = { version = "5.0.0", default-features = false, features = [
+    "default-fancy",
+] }
