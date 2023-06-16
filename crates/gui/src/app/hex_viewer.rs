@@ -1,20 +1,20 @@
 use super::{SharedState, View, Window};
 
-pub struct About {}
+pub struct HexView {}
 
-impl Window for About {
+impl Window for HexView {
     fn new() -> Self {
         Self {}
     }
 
     fn name(&self) -> &'static str {
-        "About"
+        "Hex Viewer"
     }
 }
 
-impl View for About {
+impl View for HexView {
     fn ui(&mut self, ui: &mut egui::Ui, _: &mut SharedState) {
-        ui.heading("Valence Packet Inspector");
+        ui.heading("Hex Viewer");
         // ui.text_edit_singleline((&mut state.about_text).into());
     }
 }

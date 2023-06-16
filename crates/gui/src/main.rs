@@ -2,20 +2,19 @@
     Widgets we need:
       - Hex Viewer
       - Packet List
-      - Filter Bar
-      - Main Window
-      - Connect Window
-      - Menu Bar?
+      - Filters
+      - Connect
 
     ConnectionState: Connected / Not Connected
 */
 mod app;
+mod shared_state;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let native_options = eframe::NativeOptions {
-        initial_window_size: Some(egui::Vec2::new(800.0, 600.0)),
-        decorated: false,
+        initial_window_size: Some(egui::Vec2::new(1024.0, 768.0)),
+        decorated: true,
         ..Default::default()
     };
 

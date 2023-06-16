@@ -12,12 +12,12 @@ use valence_network::packet::{
     HandshakeC2s, HandshakeNextState, LoginCompressionS2c, LoginSuccessS2c,
 };
 
-use crate::{
-    packet_io::PacketIo,
-    packet_registry::{PacketRegistry, PacketState},
-};
+use crate::{packet_io::PacketIo, packet_registry::PacketRegistry};
 
 pub use packet_registry::Packet;
+
+pub use crate::packet_registry::PacketSide;
+pub use crate::packet_registry::PacketState;
 
 static PACKET_REGISTRY: OnceLock<Arc<PacketRegistry>> = OnceLock::new();
 

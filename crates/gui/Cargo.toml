@@ -11,4 +11,7 @@ tokio = { version = "1.28.2", features = ["full"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 egui = "0.22.0"
-eframe = "0.22.0"
+eframe = { version = "0.22.0", features = ["persistence"] }
+egui_dock = { version = "0.6", features = ["serde"] }
+serde = { version = "1.0.163", features = ["derive"] }
+flume = "0.10.14"
