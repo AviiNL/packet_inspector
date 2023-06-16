@@ -1,11 +1,13 @@
 #![allow(clippy::mutable_key_type)]
 
+use egui::Context;
 use proxy_lib::Packet;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::RwLock};
 
 pub enum Event {
     StartListening,
     StopListening,
+    PacketReceived,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -19,14 +21,16 @@ pub struct SharedState {
 
     // pub listener_addr: String,
     // pub server_addr: String,
-    // #[serde(skip)]
-    // current_packet: Packet
-    // #[serde(skip)]
-    // all_packets: Vec<Packet>
+    #[serde(skip)]
+    pub selected_packet: Option<usize>,
+    #[serde(skip)]
+    pub packets: RwLock<Vec<Packet>>,
     #[serde(skip)]
     pub(super) receiver: Option<flume::Receiver<Event>>,
     #[serde(skip)]
     sender: Option<flume::Sender<Event>>,
+    #[serde(skip)]
+    pub ctx: Option<Context>,
 }
 
 impl Default for SharedState {
@@ -44,15 +48,25 @@ impl Default for SharedState {
             server_addr: "127.0.0.1:25565".to_string(),
             is_listening: false,
             packet_filter,
+            selected_packet: None,
+            packets: RwLock::new(Vec::new()),
             receiver: Some(receiver),
             sender: Some(sender),
+            ctx: None,
         }
     }
 }
 
 #[allow(unused)]
 impl SharedState {
+    pub fn new(ctx: Context) -> Self {
+        Self {
+            ctx: Some(ctx),
+            ..Self::default()
+        }
+    }
     pub(super) fn merge(mut self, other: Self) -> Self {
+        self.ctx = other.ctx;
         self.sender = other.sender;
         self.receiver = other.receiver;
 
@@ -81,7 +95,7 @@ impl SharedState {
         self
     }
 
-    pub fn send_event(&mut self, event: Event) {
+    pub fn send_event(&self, event: Event) {
         if let Some(sender) = &self.sender {
             sender.send(event);
         }

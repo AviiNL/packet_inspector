@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use egui_dock::{DockArea, NodeIndex, Style, Tree};
+use proxy_lib::Proxy;
+use tokio::task::JoinHandle;
 
 use crate::shared_state::{Event, SharedState};
 
@@ -8,6 +10,7 @@ mod about;
 mod connection;
 mod filter;
 mod hex_viewer;
+mod json_viewer;
 mod packet_list;
 
 pub trait View {
@@ -52,6 +55,8 @@ pub struct GuiApp {
 
 impl GuiApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let ctx = cc.egui_ctx.clone();
+
         // Default Application Layout
         let mut tree: Tree<Box<dyn Tab>> = Tree::new(vec![Box::new(connection::Connection::new())]);
 
@@ -62,10 +67,17 @@ impl GuiApp {
         );
 
         let [_, _] = tree.split_below(a, 0.25, vec![Box::new(filter::Filter::new())]);
-        let [_, _] = tree.split_below(b, 0.5, vec![Box::new(hex_viewer::HexView::new())]);
+        let [_, _] = tree.split_below(
+            b,
+            0.5,
+            vec![
+                Box::new(hex_viewer::HexView::new()),
+                Box::new(json_viewer::JsonView::new()),
+            ],
+        );
 
         // Persistant Storage
-        let mut shared_state = SharedState::default();
+        let mut shared_state = SharedState::new(ctx);
 
         if let Some(storage) = cc.storage {
             if let Some(value) = eframe::get_value::<SharedState>(storage, eframe::APP_KEY) {
@@ -76,28 +88,9 @@ impl GuiApp {
         let shared_state = Arc::new(RwLock::new(shared_state));
 
         // Event Handling
-        let event_shared_state = shared_state.clone();
-        tokio::spawn(async move {
-            let receiver = event_shared_state.write().unwrap().receiver.take().unwrap();
-            while let Ok(event) = receiver.recv_async().await {
-                match event {
-                    Event::StartListening => {
-                        let mut state = event_shared_state.write().unwrap();
-                        if state.is_listening {
-                            continue;
-                        }
-                        state.is_listening = true;
-                    }
-                    Event::StopListening => {
-                        let mut state = event_shared_state.write().unwrap();
-                        if !state.is_listening {
-                            continue;
-                        }
-                        state.is_listening = false;
-                    }
-                }
-            }
-        });
+        handle_events(shared_state.clone());
+
+        // Consumer thread
 
         // Tab Viewer
         let tab_viewer = TabViewer {
@@ -129,4 +122,65 @@ impl eframe::App for GuiApp {
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.tab_viewer);
     }
+}
+
+// This function is getting waaaay too complcated and messy
+fn handle_events(state: Arc<RwLock<SharedState>>) {
+    tokio::spawn(async move {
+        let mut proxy_thread: Option<JoinHandle<_>> = None;
+
+        let receiver = state.write().unwrap().receiver.take().unwrap();
+        while let Ok(event) = receiver.recv_async().await {
+            match event {
+                Event::StartListening => {
+                    let mut w_state = state.write().unwrap();
+                    if w_state.is_listening {
+                        continue;
+                    }
+
+                    let listener_addr = w_state.listener_addr.clone();
+                    let server_addr = w_state.server_addr.clone();
+                    let state = state.clone();
+
+                    proxy_thread = Some(tokio::spawn(async move {
+                        let proxy = Proxy::new(listener_addr.parse()?, server_addr.parse()?);
+                        let receiver = proxy.subscribe();
+
+                        tokio::spawn(async move {
+                            proxy.run().await?;
+                            Ok::<(), anyhow::Error>(())
+                        });
+
+                        while let Ok(packet) = receiver.recv_async().await {
+                            let state = state.read().unwrap();
+                            state.packets.write().unwrap().push(packet);
+                            state.send_event(Event::PacketReceived);
+                        }
+
+                        Ok::<(), anyhow::Error>(())
+                    }));
+
+                    w_state.is_listening = true;
+                }
+                Event::StopListening => {
+                    let mut state = state.write().unwrap();
+                    if !state.is_listening {
+                        continue;
+                    }
+
+                    if let Some(proxy_thread) = proxy_thread.take() {
+                        proxy_thread.abort();
+                    }
+
+                    state.is_listening = false;
+                }
+                Event::PacketReceived => {
+                    // Refresh UI
+                    if let Some(ctx) = &state.read().unwrap().ctx {
+                        ctx.request_repaint();
+                    }
+                }
+            }
+        }
+    });
 }
