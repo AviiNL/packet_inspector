@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use egui_dock::{DockArea, NodeIndex, Style, Tree};
 
-use crate::shared_state::SharedState;
+use crate::shared_state::{Event, SharedState};
 
 mod about;
 mod connection;
@@ -72,18 +72,20 @@ pub struct GuiApp {
 
 impl GuiApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        // Default Application Layout
         let mut tree: Tree<Box<dyn Window>> =
             Tree::new(vec![Box::new(connection::Connection::new())]);
+
         let [a, b] = tree.split_right(
             NodeIndex::root(),
             0.3,
             vec![Box::new(packet_list::PacketList::new())],
         );
 
-        // split a down with filters
         let [_, _] = tree.split_below(a, 0.25, vec![Box::new(filter::Filter::new())]);
         let [_, _] = tree.split_below(b, 0.5, vec![Box::new(hex_viewer::HexView::new())]);
 
+        // Persistant Storage
         let mut shared_state = SharedState::default();
 
         if let Some(storage) = cc.storage {
@@ -94,16 +96,31 @@ impl GuiApp {
 
         let shared_state = Arc::new(RwLock::new(shared_state));
 
+        // Event Handling
         let event_shared_state = shared_state.clone();
         tokio::spawn(async move {
             let receiver = event_shared_state.write().unwrap().receiver.take().unwrap();
             while let Ok(event) = receiver.recv_async().await {
                 match event {
-                    // Todo: handle events here
+                    Event::StartListening => {
+                        let mut state = event_shared_state.write().unwrap();
+                        if state.is_listening {
+                            continue;
+                        }
+                        state.is_listening = true;
+                    }
+                    Event::StopListening => {
+                        let mut state = event_shared_state.write().unwrap();
+                        if !state.is_listening {
+                            continue;
+                        }
+                        state.is_listening = false;
+                    }
                 }
             }
         });
 
+        // Tab Viewer
         let tab_viewer = TabViewer {
             shared_state: shared_state.clone(),
         };

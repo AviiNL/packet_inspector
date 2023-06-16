@@ -1,9 +1,14 @@
-pub(super) enum WindowEvent {}
+pub enum Event {
+    StartListening,
+    StopListening,
+}
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct SharedState {
     pub listener_addr: String,
     pub server_addr: String,
+    #[serde(skip)]
+    pub is_listening: bool,
 
     // pub listener_addr: String,
     // pub server_addr: String,
@@ -12,9 +17,9 @@ pub struct SharedState {
     // #[serde(skip)]
     // all_packets: Vec<Packet>
     #[serde(skip)]
-    pub(super) receiver: Option<flume::Receiver<WindowEvent>>,
+    pub(super) receiver: Option<flume::Receiver<Event>>,
     #[serde(skip)]
-    sender: Option<flume::Sender<WindowEvent>>,
+    sender: Option<flume::Sender<Event>>,
 }
 
 impl Default for SharedState {
@@ -23,6 +28,7 @@ impl Default for SharedState {
         Self {
             listener_addr: "127.0.0.1:25566".to_string(),
             server_addr: "127.0.0.1:25565".to_string(),
+            is_listening: false,
             receiver: Some(receiver),
             sender: Some(sender),
         }
@@ -36,5 +42,11 @@ impl SharedState {
         self.receiver = other.receiver;
 
         self
+    }
+
+    pub fn send_event(&mut self, event: Event) {
+        if let Some(sender) = &self.sender {
+            sender.send(event);
+        }
     }
 }
