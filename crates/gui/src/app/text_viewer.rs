@@ -4,11 +4,17 @@ use super::{SharedState, Tab, View};
 
 include!(concat!(env!("OUT_DIR"), "/packet_to_string.rs"));
 
-pub struct TextView {}
+pub struct TextView {
+    last_packet_id: Option<usize>,
+    packet_str: String,
+}
 
 impl Tab for TextView {
     fn new() -> Self {
-        Self {}
+        Self {
+            last_packet_id: None,
+            packet_str: "".to_string(),
+        }
     }
 
     fn name(&self) -> &'static str {
@@ -22,14 +28,17 @@ impl View for TextView {
     fn ui(&mut self, ui: &mut egui::Ui, state: &mut SharedState) {
         let packets = state.packets.read().unwrap();
         let Some(packet_index) = state.selected_packet else {
+            self.last_packet_id = None;
+            self.packet_str = "".to_string();
             return;
         };
 
-        let packet = &packets[packet_index];
+        if self.last_packet_id != Some(packet_index) {
+            self.last_packet_id = Some(packet_index);
+            self.packet_str = packet_to_string(&packets[packet_index]);
+        }
 
-        let str_packet = packet_to_string(packet);
-
-        code_view_ui(ui, &str_packet);
+        code_view_ui(ui, &self.packet_str);
     }
 }
 
