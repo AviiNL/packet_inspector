@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
 
     // consumer
     tokio::spawn(async move {
-        while let Ok(packet) = receiver.recv() {
+        while let Ok(packet) = receiver.recv_async().await {
             log(&packet);
         }
     });
