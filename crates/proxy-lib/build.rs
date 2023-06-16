@@ -23,7 +23,30 @@ pub fn main() -> anyhow::Result<()> {
     let mut p: Vec<TokenStream> = Vec::new();
 
     for packet in packets {
-        let stripped_name = packet.name.strip_suffix("Packet").unwrap_or(&packet.name);
+        let name = packet.name.strip_suffix("Packet").unwrap_or(&packet.name);
+        // lowercase the last character of name
+        let name = {
+            let mut chars = name.chars();
+            let last_char = chars.next_back().unwrap();
+            let last_char = last_char.to_lowercase().to_string();
+            let mut name = chars.collect::<String>();
+            name.push_str(&last_char);
+            name
+        };
+
+        // if the packet is clientbound, but the name does not ends with S2c, add it
+        let name = if packet.side == "clientbound" && !name.ends_with("S2c") {
+            format!("{}S2c", name)
+        } else {
+            name
+        };
+
+        // same for serverbound
+        let name = if packet.side == "serverbound" && !name.ends_with("C2s") {
+            format!("{}C2s", name)
+        } else {
+            name
+        };
 
         let id = packet.id;
         let side = match &packet.side {
@@ -47,7 +70,7 @@ pub fn main() -> anyhow::Result<()> {
                 side: #side,
                 state: #state,
                 timestamp: None,
-                name: #stripped_name,
+                name: #name,
                 data: None,
             }
         });

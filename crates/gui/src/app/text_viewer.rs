@@ -1,41 +1,45 @@
-use proxy_lib::{PacketSide, PacketState};
-
 use super::{SharedState, Tab, View};
 
-use valence::advancement::packet::*;
-use valence::client::action::*;
-use valence::client::command::*;
-use valence::client::custom_payload::*;
-use valence::client::hand_swing::*;
-use valence::client::interact_block::*;
-use valence::client::interact_entity::*;
-use valence::client::interact_item::*;
-use valence::client::keepalive::*;
-use valence::client::movement::*;
-use valence::client::packet::structure_block::*;
-use valence::client::packet::*;
-use valence::client::resource_pack::*;
-use valence::client::settings::*;
-use valence::client::status::*;
-use valence::client::teleport::*;
-use valence::client::title::*;
-use valence::entity::packet::*;
-use valence::instance::packet::*;
-use valence::inventory::packet::synchronize_recipes::*;
-use valence::inventory::packet::*;
-use valence::network::packet::*;
-use valence::particle::*;
-use valence::player_list::packet::*;
-use valence::protocol::packet::boss_bar::*;
-use valence::protocol::packet::chat::*;
-use valence::protocol::packet::command::*;
-use valence::protocol::packet::map::*;
-use valence::protocol::packet::scoreboard::*;
-use valence::protocol::packet::sound::*;
-use valence::registry::tags::*;
-use valence::world_border::packet::*;
+mod utils {
+    use proxy_lib::Packet as ProxyPacket;
+    use proxy_lib::{PacketSide, PacketState};
+    use valence::protocol::{Decode, Packet};
 
-include!(concat!(env!("OUT_DIR"), "/packet_to_string.rs"));
+    use valence::advancement::packet::*;
+    use valence::client::action::*;
+    use valence::client::command::*;
+    use valence::client::custom_payload::*;
+    use valence::client::hand_swing::*;
+    use valence::client::interact_block::*;
+    use valence::client::interact_entity::*;
+    use valence::client::interact_item::*;
+    use valence::client::keepalive::*;
+    use valence::client::movement::*;
+    use valence::client::packet::structure_block::*;
+    use valence::client::packet::*;
+    use valence::client::resource_pack::*;
+    use valence::client::settings::*;
+    use valence::client::status::*;
+    use valence::client::teleport::*;
+    use valence::client::title::*;
+    use valence::entity::packet::*;
+    use valence::instance::packet::*;
+    use valence::inventory::packet::synchronize_recipes::*;
+    use valence::inventory::packet::*;
+    use valence::network::packet::*;
+    use valence::particle::*;
+    use valence::player_list::packet::*;
+    use valence::protocol::packet::boss_bar::*;
+    use valence::protocol::packet::chat::*;
+    use valence::protocol::packet::command::*;
+    use valence::protocol::packet::map::*;
+    use valence::protocol::packet::scoreboard::*;
+    use valence::protocol::packet::sound::*;
+    use valence::registry::tags::*;
+    use valence::world_border::packet::*;
+
+    include!(concat!(env!("OUT_DIR"), "/packet_to_string.rs"));
+}
 
 pub struct TextView {
     last_packet_id: Option<usize>,
@@ -55,8 +59,6 @@ impl Tab for TextView {
     }
 }
 
-const NOT_AVAILABLE: &str = "Not yet implemented";
-
 impl View for TextView {
     fn ui(&mut self, ui: &mut egui::Ui, state: &mut SharedState) {
         let packets = state.packets.read().unwrap();
@@ -68,7 +70,7 @@ impl View for TextView {
 
         if self.last_packet_id != Some(packet_index) {
             self.last_packet_id = Some(packet_index);
-            self.packet_str = packet_to_string(&packets[packet_index]);
+            self.packet_str = utils::packet_to_string(&packets[packet_index]);
         }
 
         code_view_ui(ui, &self.packet_str);

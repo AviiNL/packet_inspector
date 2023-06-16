@@ -119,8 +119,7 @@ pub fn main() -> anyhow::Result<()> {
 
     // wrap generated in a function definition
     let generated = quote! {
-        use proxy_lib::Packet as ProxyPacket;
-        use valence::protocol::{Decode, Packet};
+        const NOT_AVAILABLE: &str = "Not yet implemented";
 
         pub fn packet_to_string(packet: &ProxyPacket) -> String {
             let bytes = packet.data.as_ref().unwrap();
