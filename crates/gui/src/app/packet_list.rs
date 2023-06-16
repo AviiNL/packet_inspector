@@ -46,9 +46,16 @@ fn handle_keyboard_input(state: &mut SharedState, ui: &mut Ui) {
             None => 1, // 1, so previous goes to 0
         };
 
-        if index > 0 {
-            state.selected_packet = Some(index - 1);
-            // TODO: scroll to currently selected packet (how?! i have no reference to the packet rect here)
+        let packets = state.packets.read().unwrap();
+        let filtered_packets = packets
+            .iter()
+            .enumerate()
+            .filter(|(i, p)| *i < index && state.packet_filter.get(p).unwrap_or(true))
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+
+        if let Some(&prev_index) = filtered_packets.last() {
+            state.selected_packet = Some(prev_index);
         }
     }
 
@@ -60,9 +67,15 @@ fn handle_keyboard_input(state: &mut SharedState, ui: &mut Ui) {
         };
 
         let packets = state.packets.read().unwrap();
-        if index < packets.len() - 1 {
-            state.selected_packet = Some(index + 1);
-            // TODO: scroll to currently selected packet (how?! i have no reference to the packet rect here)
+        let filtered_packets = packets
+            .iter()
+            .enumerate()
+            .filter(|(i, p)| *i > index && state.packet_filter.get(p).unwrap_or(true))
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+
+        if let Some(&next_index) = filtered_packets.first() {
+            state.selected_packet = Some(next_index);
         }
     }
 }
