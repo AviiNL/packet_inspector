@@ -37,8 +37,8 @@ impl Proxy {
         });
 
         Proxy {
-            listener_addr: listener_addr.into(),
-            server_addr: server_addr.into(),
+            listener_addr,
+            server_addr,
         }
     }
 
@@ -50,7 +50,7 @@ impl Proxy {
         let listener = tokio::net::TcpListener::bind(self.listener_addr).await?;
 
         while let Ok((client, _addr)) = listener.accept().await {
-            let server_addr = self.server_addr.clone();
+            let server_addr = self.server_addr;
             tokio::spawn(async move {
                 let server = TcpStream::connect(server_addr).await?;
 
@@ -140,7 +140,7 @@ impl Proxy {
                         }
                     };
 
-                    if let Some(_) = extrapolate_packet::<LoginSuccessS2c>(&packet) {
+                    if extrapolate_packet::<LoginSuccessS2c>(&packet).is_some() {
                         *current_state.write().unwrap() = PacketState::Play;
                     };
                 }
@@ -177,5 +177,5 @@ where
 
     let mut r = &packet.body[..];
     let packet = P::decode(&mut r).ok()?;
-    Some(packet.clone())
+    Some(packet)
 }

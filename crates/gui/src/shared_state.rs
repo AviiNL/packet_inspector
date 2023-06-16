@@ -1,6 +1,7 @@
-use std::collections::HashMap;
+#![allow(clippy::mutable_key_type)]
 
 use proxy_lib::Packet;
+use std::collections::HashMap;
 
 pub enum Event {
     StartListening,

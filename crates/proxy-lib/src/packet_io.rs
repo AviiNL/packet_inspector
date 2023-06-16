@@ -24,7 +24,7 @@ impl PacketIoReader {
                 // self.logger
                 //     .log("Unknown".to_string(), self.direction.clone(), frame.clone());
 
-                return Ok(frame.clone());
+                return Ok(frame);
             }
 
             self.dec.reserve(READ_BUF_SIZE);
@@ -208,7 +208,7 @@ const READ_BUF_SIZE: usize = 1024;
 impl PacketIo {
     pub(crate) fn new(stream: TcpStream) -> Self {
         Self {
-            stream: stream,
+            stream,
             enc: PacketEncoder::new(),
             dec: PacketDecoder::new(),
             threshold: None,

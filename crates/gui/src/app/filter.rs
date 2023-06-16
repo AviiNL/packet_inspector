@@ -61,8 +61,7 @@ fn draw_packet_list(ui: &mut Ui, state: &mut SharedState, packet_state: PacketSt
         PacketState::Play => "Play",
     };
 
-    // Handshake
-    let mut checkbox = get_checkbox_state(&state, packet_state);
+    let mut checkbox = get_checkbox_state(state, packet_state);
     if TriCheckbox::new(&mut checkbox, RichText::new(title).heading().strong())
         .ui(ui)
         .changed()
@@ -79,12 +78,12 @@ fn draw_packet_list(ui: &mut Ui, state: &mut SharedState, packet_state: PacketSt
         }
     }
 
-    for (p, mut enabled) in state
+    for (p, enabled) in state
         .packet_filter
         .iter_mut()
         .filter(|(p, _)| p.state == packet_state)
         .sorted_by(|(a, _), (b, _)| a.id.cmp(&b.id))
     {
-        ui.checkbox(&mut enabled, format!("[0x{:0>2X}] {}", p.id, p.name));
+        ui.checkbox(enabled, format!("[0x{:0>2X}] {}", p.id, p.name));
     }
 }

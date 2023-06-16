@@ -44,6 +44,6 @@ fn truncated(string: String, max_len: usize) -> String {
     if string.len() > max_len {
         format!("{}...", &string[..max_len])
     } else {
-        string.to_string()
+        string
     }
 }
